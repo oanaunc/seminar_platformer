@@ -2,26 +2,17 @@ import * as THREE from 'three';
 import { cfg } from './Config';
 
 /**
- * Third-person follow camera with smooth damping.
+ * 2D side-scrolling camera: follows player on X with look-ahead,
+ * gently follows Y with a floor clamp.
  */
 export class CameraRig {
-  private targetPos = new THREE.Vector3();
+  update(camera: THREE.OrthographicCamera, playerPos: THREE.Vector3, playerVelX: number, dt: number): void {
+    const lookAheadX = playerVelX > 0.5 ? cfg.cameraLookAheadX : playerVelX < -0.5 ? -cfg.cameraLookAheadX : 0;
+    const targetX = playerPos.x + lookAheadX;
+    const targetY = Math.max(playerPos.y + cfg.cameraLookAheadY, cfg.cameraMinY);
 
-  update(camera: THREE.PerspectiveCamera, playerPos: THREE.Vector3, playerVelX: number, dt: number): void {
-    // Look-ahead offset based on horizontal movement direction
-    const lookAhead = playerVelX * cfg.cameraLookAhead * 0.1;
-
-    this.targetPos.set(
-      playerPos.x + cfg.cameraOffset.x + lookAhead,
-      playerPos.y + cfg.cameraOffset.y,
-      playerPos.z + cfg.cameraOffset.z,
-    );
-
-    // Smooth follow via exponential lerp
     const t = 1 - Math.exp(-cfg.cameraLerp * dt);
-    camera.position.lerp(this.targetPos, t);
-
-    // Always look at a point slightly above the player
-    camera.lookAt(playerPos.x, playerPos.y + 1, playerPos.z);
+    camera.position.x += (targetX - camera.position.x) * t;
+    camera.position.y += (targetY - camera.position.y) * t;
   }
 }
