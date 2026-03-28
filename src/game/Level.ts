@@ -57,13 +57,12 @@ const LEVEL_1: LevelDef = {
   goal: { pos: [52, 6], size: [1.2, 3] },
 
   platforms: [
-    // ── Ground / underground base ──
-    { pos: [-10, -2], size: [16, 5], type: 'grass' },
-    { pos: [8, -3.5], size: [6, 2], type: 'dirt' },
-    // Stepping platforms
-    { pos: [13, -1], size: [4, 1], type: 'grass' },
-    { pos: [18, 1], size: [3, 0.8], type: 'grass' },
-    { pos: [22, 3], size: [3, 0.8], type: 'grass' },
+    // ── Ground / underground base (wide, easy start) ──
+    { pos: [-4, -2], size: [22, 5], type: 'grass' },
+    // Gentle stepping platforms (small height increments, close together)
+    { pos: [11, 0], size: [4, 1], type: 'grass' },
+    { pos: [16, 1], size: [4, 1], type: 'grass' },
+    { pos: [21, 2], size: [3.5, 0.8], type: 'grass' },
     // Upper grassy area
     { pos: [27, 3], size: [10, 1], type: 'grass' },
     // Underground walls beneath upper area
@@ -85,15 +84,13 @@ const LEVEL_1: LevelDef = {
   ],
 
   movingPlatforms: [
-    // Horizontal platform over the gap
+    // Horizontal platform over the gap before the far platform
     { pos: [42, 5.5], size: [2.5, 0.5], axis: 'x', amplitude: 2.5, speed: 1.8, type: 'wood' },
-    // Vertical elevator at the underground section
-    { pos: [9, 0], size: [2.2, 0.5], axis: 'y', amplitude: 2.5, speed: 1.2, type: 'stone' },
+    // Vertical elevator near the upper area
+    { pos: [24, 4.5], size: [2.2, 0.5], axis: 'y', amplitude: 2, speed: 1.2, type: 'stone' },
   ],
 
   hazards: [
-    // Spike pit in the gap
-    { pos: [8, -5], size: [6, 1], type: 'water' },
     // Spikes on the bridge
     { pos: [38, 4.6], size: [0.8, 0.4], type: 'spikes' },
     // Water at the bottom below bridge area
@@ -101,11 +98,11 @@ const LEVEL_1: LevelDef = {
   ],
 
   coins: [
-    { pos: [-5, 2] },
-    { pos: [0, 2] },
-    { pos: [13, 1] },
+    { pos: [-2, 2] },
+    { pos: [3, 2] },
+    { pos: [11, 2] },
     { pos: [15, 6.5] },
-    { pos: [18, 3] },
+    { pos: [16, 3] },
     { pos: [24, 5] },
     { pos: [30, 5] },
     { pos: [34, 8.5] },
@@ -114,15 +111,15 @@ const LEVEL_1: LevelDef = {
   ],
 
   decorations: [
-    { pos: [-9, 1.5], kind: 'tallTree' },
-    { pos: [-4, 0.8], kind: 'fence' },
-    { pos: [-1, 0.5], kind: 'bush' },
+    { pos: [-12, 1.5], kind: 'tallTree' },
+    { pos: [-6, 0.8], kind: 'fence' },
+    { pos: [-2, 0.5], kind: 'bush' },
     { pos: [2, 0.8], kind: 'fence' },
-    { pos: [4, 1.5], kind: 'tree' },
-    { pos: [-6, 0.7], kind: 'flower' },
-    { pos: [1, 0.7], kind: 'flower' },
-    { pos: [14, 0], kind: 'sign' },
-    { pos: [20, 2], kind: 'bush' },
+    { pos: [5, 1.5], kind: 'tree' },
+    { pos: [-9, 0.7], kind: 'flower' },
+    { pos: [0, 0.7], kind: 'flower' },
+    { pos: [8, 0.5], kind: 'sign' },
+    { pos: [20, 2.8], kind: 'bush' },
     { pos: [25, 4.2], kind: 'fence' },
     { pos: [29, 4.2], kind: 'bush' },
     { pos: [31, 4.5], kind: 'tree' },
