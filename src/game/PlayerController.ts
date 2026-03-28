@@ -4,8 +4,8 @@ import { Input } from './Input';
 import { AABB, integrate, resolveCollisions } from './Physics';
 
 /**
- * 2D Character controller: left/right + jump only.
- * Z position is always 0.
+ * 2D Character controller with side-view animated character.
+ * Handles movement, physics, and procedural animation.
  */
 export class PlayerController {
   readonly position = new THREE.Vector3();
@@ -18,8 +18,18 @@ export class PlayerController {
   private coyoteTimer = 0;
   private jumpBufferTimer = 0;
   private jumpHeldThisJump = false;
+  private animTime = 0;
+  private isMoving = false;
 
   mesh!: THREE.Group;
+
+  // Animated parts (set by buildPlayerMesh in Level)
+  legBack!: THREE.Object3D;
+  legFront!: THREE.Object3D;
+  armBack!: THREE.Object3D;
+  armFront!: THREE.Object3D;
+  bodyGroup!: THREE.Group;
+  eyePupil!: THREE.Object3D;
 
   reset(spawn: THREE.Vector3): void {
     this.position.copy(spawn);
@@ -31,6 +41,8 @@ export class PlayerController {
     this.jumpBufferTimer = 0;
     this.jumpHeldThisJump = false;
     this.facingRight = true;
+    this.animTime = 0;
+    this.isMoving = false;
   }
 
   update(input: Input, statics: AABB[], dt: number): void {
@@ -50,9 +62,10 @@ export class PlayerController {
       this.velocity.x *= (1 - friction);
     }
 
-    // Track facing direction for sprite flip
     if (moveX > 0) this.facingRight = true;
     else if (moveX < 0) this.facingRight = false;
+
+    this.isMoving = Math.abs(this.velocity.x) > 0.5;
 
     // ── Coyote time ──
     if (this.grounded) {
@@ -77,7 +90,6 @@ export class PlayerController {
       this.jumpHeldThisJump = true;
     }
 
-    // Variable jump height
     if (this.jumpHeldThisJump && input.jumpReleased && this.velocity.y > 0) {
       this.velocity.y *= cfg.jumpCutMultiplier;
       this.jumpHeldThisJump = false;
@@ -88,7 +100,6 @@ export class PlayerController {
     const acc = new THREE.Vector3(0, -cfg.gravity, 0);
     integrate(this.position, this.velocity, acc, dt);
 
-    // Lock Z to 0
     this.position.z = 0;
     this.velocity.z = 0;
 
@@ -97,10 +108,72 @@ export class PlayerController {
     this.grounded = result.grounded;
     this.groundCollider = result.groundCollider;
 
-    // ── Sync visual mesh ──
-    if (this.mesh) {
-      this.mesh.position.set(this.position.x, this.position.y, 1); // Z=1 so player is in front
-      this.mesh.scale.x = this.facingRight ? 1 : -1;
+    // ── Animation ──
+    this.animTime += dt;
+    this.animate(dt);
+  }
+
+  /** Procedural animation: walk cycle, idle breathing, jump squash/stretch. */
+  private animate(_dt: number): void {
+    if (!this.mesh) return;
+
+    this.mesh.position.set(this.position.x, this.position.y, 1);
+    this.mesh.scale.x = this.facingRight ? 1 : -1;
+
+    const runMult = Math.abs(this.velocity.x) > cfg.moveSpeed + 1 ? 1.4 : 1;
+
+    if (!this.grounded) {
+      // ── In-air pose ──
+      // Squash/stretch based on vertical velocity
+      const vyNorm = Math.max(-1, Math.min(1, this.velocity.y / cfg.jumpSpeed));
+      const stretchY = 1 + vyNorm * 0.12;
+      const squashX = 1 - vyNorm * 0.08;
+      this.bodyGroup.scale.set(squashX, stretchY, 1);
+
+      // Legs tucked when rising, extended when falling
+      const legAngle = vyNorm > 0 ? 0.4 : -0.2;
+      this.legBack.rotation.z = legAngle;
+      this.legFront.rotation.z = -legAngle * 0.5;
+
+      // Arms up when rising
+      this.armBack.rotation.z = vyNorm > 0 ? 0.5 : -0.15;
+      this.armFront.rotation.z = vyNorm > 0 ? -0.3 : 0.1;
+
+    } else if (this.isMoving) {
+      // ── Walk / run cycle ──
+      const freq = 10 * runMult;
+      const t = this.animTime * freq;
+      const legSwing = Math.sin(t) * 0.5 * runMult;
+
+      this.bodyGroup.scale.set(1, 1, 1);
+      // Body bob
+      this.bodyGroup.position.y = Math.abs(Math.sin(t)) * 0.04;
+
+      // Legs swing opposite to each other (pivoting from hip)
+      this.legBack.rotation.z = legSwing;
+      this.legFront.rotation.z = -legSwing;
+
+      // Arms swing opposite to legs
+      this.armBack.rotation.z = -legSwing * 0.6;
+      this.armFront.rotation.z = legSwing * 0.6;
+
+    } else {
+      // ── Idle breathing ──
+      const t = this.animTime * 2;
+      const breathe = Math.sin(t) * 0.02;
+
+      this.bodyGroup.scale.set(1 - breathe, 1 + breathe, 1);
+      this.bodyGroup.position.y = 0;
+
+      this.legBack.rotation.z = 0;
+      this.legFront.rotation.z = 0;
+      this.armBack.rotation.z = Math.sin(t) * 0.05;
+      this.armFront.rotation.z = -Math.sin(t) * 0.05;
+    }
+
+    // Eye tracking: pupil shifts in facing direction
+    if (this.eyePupil) {
+      this.eyePupil.position.x = 0.03;
     }
   }
 }

@@ -576,60 +576,190 @@ export class Level {
     return group;
   }
 
+  /**
+   * Build a side-view character with separate limbs for animation.
+   * Default pose faces right. PlayerController flips via scale.x.
+   *
+   * Structure (all in XY plane):
+   *   group (root — positioned at player.position)
+   *     bodyGroup (holds torso, head, hat — scales for squash/stretch)
+   *       torso, shirt, head, hat, eye, pupil
+   *     legBack  (pivot at hip — rotates for walk cycle)
+   *     legFront
+   *     armBack  (pivot at shoulder — swings for walk)
+   *     armFront
+   */
   private buildPlayerMesh(scene: THREE.Scene, player: PlayerController): void {
+    const DS = THREE.DoubleSide;
+    const mat = (color: number) => new THREE.MeshStandardMaterial({ color, side: DS });
+    const circle = (r: number, color: number) =>
+      new THREE.Mesh(new THREE.CircleGeometry(r, 20), mat(color));
+    const roundedRect = (w: number, h: number, color: number) => {
+      const shape = new THREE.Shape();
+      const r = Math.min(w, h) * 0.25;
+      shape.moveTo(-w / 2 + r, -h / 2);
+      shape.lineTo(w / 2 - r, -h / 2);
+      shape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+      shape.lineTo(w / 2, h / 2 - r);
+      shape.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2);
+      shape.lineTo(-w / 2 + r, h / 2);
+      shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r);
+      shape.lineTo(-w / 2, -h / 2 + r);
+      shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+      return new THREE.Mesh(new THREE.ShapeGeometry(shape), mat(color));
+    };
+
     const group = new THREE.Group();
 
-    // Body (overalls)
-    const body = this.box(0.55, 0.55, 0.3, 0x4488cc);
-    body.position.y = -0.1;
-    group.add(body);
+    // ── Legs (behind body, pivoted at hip) ──
 
-    // Shirt
-    const shirt = this.box(0.55, 0.25, 0.31, 0xe04040);
+    // Back leg (drawn at z = -0.02 so it's behind)
+    const legBack = new THREE.Group();
+    const legBackThigh = roundedRect(0.18, 0.28, 0x3366aa);
+    legBackThigh.position.y = -0.14;
+    legBack.add(legBackThigh);
+    const legBackBoot = roundedRect(0.22, 0.14, 0x6b4226);
+    legBackBoot.position.y = -0.34;
+    legBack.add(legBackBoot);
+    legBack.position.set(0.02, -0.28, -0.02);
+    group.add(legBack);
+
+    // Front leg (z = 0.02 so it's in front)
+    const legFront = new THREE.Group();
+    const legFrontThigh = roundedRect(0.18, 0.28, 0x4488cc);
+    legFrontThigh.position.y = -0.14;
+    legFront.add(legFrontThigh);
+    const legFrontBoot = roundedRect(0.22, 0.14, 0x7a5232);
+    legFrontBoot.position.y = -0.34;
+    legFront.add(legFrontBoot);
+    legFront.position.set(0.02, -0.28, 0.02);
+    group.add(legFront);
+
+    // ── Back arm (behind body) ──
+    const armBack = new THREE.Group();
+    const armBackUpper = roundedRect(0.12, 0.26, 0xc03030);
+    armBackUpper.position.y = -0.13;
+    armBack.add(armBackUpper);
+    const armBackHand = circle(0.07, 0xffd4a0);
+    armBackHand.position.set(0, -0.28, 0.01);
+    armBack.add(armBackHand);
+    armBack.position.set(-0.02, 0.2, -0.03);
+    group.add(armBack);
+
+    // ── Body group (torso + head + hat — animated for squash/stretch) ──
+    const bodyGroup = new THREE.Group();
+
+    // Torso — overalls
+    const torso = roundedRect(0.5, 0.42, 0x4488cc);
+    torso.position.y = -0.03;
+    bodyGroup.add(torso);
+
+    // Overall strap lines
+    const strapL = roundedRect(0.06, 0.18, 0x3366aa);
+    strapL.position.set(-0.12, 0.12, 0.01);
+    bodyGroup.add(strapL);
+    const strapR = roundedRect(0.06, 0.18, 0x3366aa);
+    strapR.position.set(0.12, 0.12, 0.01);
+    bodyGroup.add(strapR);
+
+    // Overall button
+    const button = circle(0.03, 0xffcc00);
+    button.position.set(0, 0.05, 0.02);
+    bodyGroup.add(button);
+
+    // Shirt (visible above overalls)
+    const shirt = roundedRect(0.5, 0.18, 0xe04040);
     shirt.position.y = 0.25;
-    group.add(shirt);
+    bodyGroup.add(shirt);
+
+    // Neck
+    const neck = roundedRect(0.14, 0.08, 0xffd4a0);
+    neck.position.y = 0.36;
+    bodyGroup.add(neck);
 
     // Head
-    const head = new THREE.Mesh(
-      new THREE.CircleGeometry(0.28, 16),
-      new THREE.MeshStandardMaterial({ color: 0xffd4a0, side: THREE.DoubleSide }),
+    const head = circle(0.3, 0xffd4a0);
+    head.position.set(0.02, 0.55, 0.01);
+    bodyGroup.add(head);
+
+    // Ear (back)
+    const ear = circle(0.07, 0xeebb88);
+    ear.position.set(-0.22, 0.52, -0.01);
+    bodyGroup.add(ear);
+
+    // Nose (side-view bump)
+    const nose = circle(0.05, 0xeebb88);
+    nose.position.set(0.24, 0.5, 0.02);
+    bodyGroup.add(nose);
+
+    // Eye white
+    const eyeWhite = circle(0.1, 0xffffff);
+    eyeWhite.position.set(0.1, 0.58, 0.02);
+    bodyGroup.add(eyeWhite);
+
+    // Pupil
+    const eyePupil = circle(0.055, 0x222222);
+    eyePupil.position.set(0.13, 0.57, 0.03);
+    bodyGroup.add(eyePupil);
+
+    // Eye highlight
+    const eyeHighlight = circle(0.025, 0xffffff);
+    eyeHighlight.position.set(0.15, 0.6, 0.04);
+    bodyGroup.add(eyeHighlight);
+
+    // Mouth (small curve approximated by a thin arc)
+    const mouthShape = new THREE.Shape();
+    mouthShape.absarc(0, 0, 0.06, Math.PI * 0.1, Math.PI * 0.9, false);
+    mouthShape.absarc(0, 0.01, 0.04, Math.PI * 0.9, Math.PI * 0.1, true);
+    const mouth = new THREE.Mesh(
+      new THREE.ShapeGeometry(mouthShape),
+      mat(0xcc5544),
     );
-    head.position.set(0, 0.52, 0.01);
-    group.add(head);
+    mouth.position.set(0.15, 0.42, 0.02);
+    bodyGroup.add(mouth);
 
     // Hat
-    const hat = this.box(0.6, 0.16, 0.32, 0xcc2222);
-    hat.position.y = 0.72;
-    group.add(hat);
-    const brim = this.box(0.75, 0.06, 0.33, 0xcc2222);
-    brim.position.set(0.05, 0.65, 0.01);
-    group.add(brim);
+    const hatBody = roundedRect(0.58, 0.2, 0xcc2222);
+    hatBody.position.set(0, 0.76, 0.02);
+    bodyGroup.add(hatBody);
+    // Hat brim (extends forward for side-view)
+    const hatBrim = roundedRect(0.36, 0.07, 0xaa1818);
+    hatBrim.position.set(0.22, 0.68, 0.03);
+    bodyGroup.add(hatBrim);
+    // Hat highlight
+    const hatHighlight = roundedRect(0.15, 0.06, 0xdd4444);
+    hatHighlight.position.set(0.05, 0.8, 0.03);
+    bodyGroup.add(hatHighlight);
 
-    // Eyes
-    const eyeL = new THREE.Mesh(
-      new THREE.CircleGeometry(0.05, 8),
-      new THREE.MeshStandardMaterial({ color: 0x222222, side: THREE.DoubleSide }),
-    );
-    eyeL.position.set(-0.08, 0.55, 0.05);
-    group.add(eyeL);
-    const eyeR = new THREE.Mesh(
-      new THREE.CircleGeometry(0.05, 8),
-      new THREE.MeshStandardMaterial({ color: 0x222222, side: THREE.DoubleSide }),
-    );
-    eyeR.position.set(0.08, 0.55, 0.05);
-    group.add(eyeR);
+    // "M" emblem on hat (simple circle badge)
+    const emblem = circle(0.06, 0xffffff);
+    emblem.position.set(0.15, 0.74, 0.04);
+    bodyGroup.add(emblem);
 
-    // Feet
-    const footL = this.box(0.2, 0.12, 0.3, 0x553322);
-    footL.position.set(-0.15, -0.43, 0);
-    group.add(footL);
-    const footR = this.box(0.2, 0.12, 0.3, 0x553322);
-    footR.position.set(0.15, -0.43, 0);
-    group.add(footR);
+    group.add(bodyGroup);
+
+    // ── Front arm (in front of body) ──
+    const armFront = new THREE.Group();
+    const armFrontUpper = roundedRect(0.13, 0.26, 0xe04040);
+    armFrontUpper.position.y = -0.13;
+    armFront.add(armFrontUpper);
+    const armFrontHand = circle(0.08, 0xffd4a0);
+    armFrontHand.position.set(0, -0.28, 0.01);
+    armFront.add(armFrontHand);
+    armFront.position.set(0.02, 0.2, 0.03);
+    group.add(armFront);
 
     scene.add(group);
     this.allObjects.push(group);
+
+    // Store references for animation
     player.mesh = group;
+    player.bodyGroup = bodyGroup;
+    player.legBack = legBack;
+    player.legFront = legFront;
+    player.armBack = armBack;
+    player.armFront = armFront;
+    player.eyePupil = eyePupil;
   }
 
   /* ── Background ──────────────────────────── */
