@@ -54,7 +54,7 @@ interface LevelDef {
 const LEVEL_1: LevelDef = {
   spawn: [-8, 4],
 
-  goal: { pos: [52, 6], size: [1.2, 3] },
+  goal: { pos: [52, 6.5], size: [1.2, 3] },
 
   platforms: [
     // ── Ground / underground base (wide, easy start) ──
@@ -67,10 +67,13 @@ const LEVEL_1: LevelDef = {
     { pos: [27, 3], size: [10, 1], type: 'grass' },
     // Underground walls beneath upper area
     { pos: [27, -1], size: [10, 7], type: 'stone' },
-    // Bridge section
-    { pos: [38, 4], size: [4, 0.5], type: 'bridge' },
-    // Far platform
-    { pos: [46, 3], size: [6, 1], type: 'grass' },
+    // Bridge section (right after upper area, easy to reach)
+    { pos: [34, 3.5], size: [4, 0.5], type: 'bridge' },
+    // Small landing pad after bridge
+    { pos: [39, 3.5], size: [3, 1], type: 'grass' },
+    { pos: [39, -0.5], size: [3, 7], type: 'stone' },
+    // Far platform (close to where moving platform delivers you)
+    { pos: [46, 3.5], size: [6, 1], type: 'grass' },
     // Underground fill at far end
     { pos: [46, -1.5], size: [6, 8], type: 'stone' },
     // Goal platform
@@ -78,23 +81,21 @@ const LEVEL_1: LevelDef = {
     { pos: [52, -0.5], size: [5, 8], type: 'dirt' },
     // Floating bonus platforms
     { pos: [15, 5], size: [2.5, 0.5], type: 'wood' },
-    { pos: [34, 7], size: [3, 0.5], type: 'wood' },
-    // Wall below bridge (so you can't just walk under)
-    { pos: [38, 0], size: [4, 7.5], type: 'stone' },
+    { pos: [30, 6], size: [3, 0.5], type: 'wood' },
   ],
 
   movingPlatforms: [
-    // Horizontal platform over the gap before the far platform
-    { pos: [42, 5.5], size: [2.5, 0.5], axis: 'x', amplitude: 2.5, speed: 1.8, type: 'wood' },
-    // Vertical elevator near the upper area
+    // Horizontal shuttle from landing pad to far platform (short gap, easy to ride)
+    { pos: [43, 4.5], size: [3, 0.5], axis: 'x', amplitude: 2, speed: 1.5, type: 'wood' },
+    // Vertical elevator near upper area
     { pos: [24, 4.5], size: [2.2, 0.5], axis: 'y', amplitude: 2, speed: 1.2, type: 'stone' },
   ],
 
   hazards: [
-    // Spikes on the bridge
-    { pos: [38, 4.6], size: [0.8, 0.4], type: 'spikes' },
-    // Water at the bottom below bridge area
-    { pos: [38, -5.5], size: [12, 2], type: 'water' },
+    // Spikes below the gap (between landing pad and far platform)
+    { pos: [43, -1], size: [4, 0.5], type: 'spikes' },
+    // Water at the very bottom
+    { pos: [43, -5.5], size: [12, 2], type: 'water' },
   ],
 
   coins: [
@@ -104,9 +105,9 @@ const LEVEL_1: LevelDef = {
     { pos: [15, 6.5] },
     { pos: [16, 3] },
     { pos: [24, 5] },
-    { pos: [30, 5] },
-    { pos: [34, 8.5] },
-    { pos: [44, 5] },
+    { pos: [30, 7.5] },
+    { pos: [34, 5] },
+    { pos: [43, 6] },
     { pos: [50, 6] },
   ],
 
@@ -127,7 +128,7 @@ const LEVEL_1: LevelDef = {
     { pos: [48, 4.2], kind: 'barrel' },
     { pos: [54, 5.5], kind: 'tallTree' },
     { pos: [50, 4.7], kind: 'flower' },
-    { pos: [43, 4], kind: 'vine' },
+    { pos: [39, 4.8], kind: 'fence' },
   ],
 };
 
